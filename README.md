@@ -18,9 +18,22 @@ The aim is to get working versions implemented so the library can actually be us
 
 Usage is simple, to obtain a collection, wrap any Iterable with a call to the ```linq``` function and then chain additional methods as required, e.g.:
 
-```linq([1, 2, 3, 4, 5]).where(num => num >= 3).select(num => num + 1).toArray();```
+```
+linq([1, 2, 3, 4, 5]).where(num => num >= 3).select(num => num + 1).toArray();
 
-```// [4, 5, 6] ```
+// [4, 5, 6] 
+```
+
+Use in any iterable context, e.g. a ```for``` loop
+
+```
+let collection = linq([1, 2, 3]);
+let oddNumbers = collection.where(num => num % 2 === 1);
+
+for(let item of oddNumbers) {
+    console.log(item);
+}
+```
 
 &nbsp;
 
