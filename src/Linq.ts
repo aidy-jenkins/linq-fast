@@ -653,7 +653,7 @@ export module Collection {
 
 class OrderedCollection<TOrderKey, T> extends Collection<T> {
 
-    protected sortedData: Iterable<[key: TOrderKey, value: T]>;
+    protected sortedData: Iterable<[TOrderKey, T]>;
 
     [Symbol.iterator] = function* (this: OrderedCollection<TOrderKey, T>) {
         for (let [key, value] of this.sortedData) {
@@ -661,9 +661,8 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
         }
     };
 
-
     constructor(
-        data: Iterable<[key: TOrderKey, value: T]>
+        data: Iterable<[TOrderKey, T]>
     ) {
         super(null);
         this.sortedData = data;
