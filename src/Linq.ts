@@ -666,7 +666,7 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
     ) {
         super(null);
         this.sortedData = data;
-        this.data = linq(this).select(v => v);
+        this.data = linq(this);
     }
 
     thenBy<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
