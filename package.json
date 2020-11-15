@@ -24,6 +24,8 @@
   "keywords": [
     "data",
     "linq",
+    "enumerable",
+    "ienumerable",
     "sort",
     "manipulation",
     "table",
