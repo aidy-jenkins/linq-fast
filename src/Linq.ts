@@ -1,5 +1,9 @@
 export const Linq = <T = any>(data: Iterable<T>) => {
-    return new Collection<T>(data);
+    return new Collection<T>(function* () {
+        for(let item of data) {
+            yield item;
+        }
+    });
 };
 
 type Comparer<TLeft, TRight = TLeft> = (a: TLeft, b: TRight) => boolean;
@@ -61,11 +65,13 @@ export class Collection<T> {
             if (!predicate(item))
                 return false;
         }
+
+        return true;
     }
 
     any(predicate?: Predicate<T>) {
         if (predicate)
-            return !this.all(predicate);
+            return !this.all(x => !predicate(x));
         else {
             let { done } = this.data[Symbol.iterator]().next();
             return !done;
@@ -78,7 +84,7 @@ export class Collection<T> {
                 yield item;
             }
             yield value;
-        }.call(this));
+        }.bind(this));
     }
 
     average<TNum extends T & number>(): TNum {
@@ -91,7 +97,7 @@ export class Collection<T> {
             for (let item of this.data) {
                 yield Collection.TypeMap[type](item);
             }
-        }.call(this));
+        }.bind(this));
     }
 
     concat(collection: Collection<T>) {
@@ -103,7 +109,7 @@ export class Collection<T> {
             for (let item of collection.data) {
                 yield item;
             }
-        }.call(this));
+        }.bind(this));
     }
 
     contains(value: T): boolean;
@@ -143,7 +149,7 @@ export class Collection<T> {
                     yield item;
                 }
             }
-        }.call(this))
+        }.bind(this))
     }
 
     elementAt(index: number) {
@@ -230,7 +236,7 @@ export class Collection<T> {
                     yield groupItem;
             }
 
-        }.call(this)) as Grouping<TKey, TResult>;
+        }.bind(this)) as Grouping<TKey, TResult>;
     }
 
     groupJoin<TInner, TKey, TResult>(inner: Collection<TInner>, outerKeySelector: (item: T) => TKey, innerKeySelector: (item: TInner) => TKey, resultSelector: (left: T, right: Collection<TInner>) => TResult, comparer?: Comparer<TKey>) {
@@ -318,7 +324,7 @@ export class Collection<T> {
             values.sort(([leftKey, _], [rightKey, __]) => comparer(leftKey, rightKey));
             for (let value of values)
                 yield value;
-        }.call(this));
+        }.bind(this));
     }
 
     orderByDescending<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
@@ -332,21 +338,21 @@ export class Collection<T> {
             for (let item of this.data) {
                 yield item;
             }
-        }.call(this));
+        }.bind(this));
     }
 
     static range(start: number, count: number) {
         return new Collection<number>((function* () {
             for (let i = start; i <= count; ++i)
                 yield i;
-        })());
+        }));
     }
 
     static repeat<T>(value: T, count: number) {
         return new Collection<T>((function* () {
             for (let i = 0; i < count; ++i)
                 yield value;
-        })());
+        }));
     }
 
     reverse() {
@@ -354,17 +360,18 @@ export class Collection<T> {
             let values = this.toArray().reverse();
             for (let item of values)
                 yield item;
-        }.call(this));
+        }.bind(this));
     }
 
 
-    [Symbol.iterator] = function* (this: Collection<T>) {
-        for (let item of this.data)
-            yield item;
+    [Symbol.iterator] = this._data;
+
+    private get data() {
+        return this._data();
     }
 
     constructor(
-        protected data: Iterable<T>
+        protected _data: () => Generator<T>
     ) {
 
     }
@@ -379,7 +386,7 @@ export class Collection<T> {
 
                 yield callback(value, index);
             }
-        }).call(this));
+        }).bind(this));
     }
 
     selectMany<TResult>(selector: (item: T, index: number) => Collection<TResult>): Collection<TResult>;
@@ -406,7 +413,7 @@ export class Collection<T> {
                     }
                 }
             }
-        }.call(this));
+        }.bind(this));
     }
 
     sequenceEqual(otherCollection: Collection<T>, comparer?: Comparer<T>) {
@@ -484,7 +491,7 @@ export class Collection<T> {
                 yield item;
                 ++i;
             }
-        }.call(this));
+        }.bind(this));
     }
 
     skipLast(count: number) {
@@ -506,7 +513,7 @@ export class Collection<T> {
                 yield item;
                 ++i;
             }
-        }.call(this));
+        }.bind(this));
     }
 
     sum<TNum extends T & number>(): TNum {
@@ -525,7 +532,7 @@ export class Collection<T> {
                 yield item;
                 ++i;
             }
-        }.call(this));
+        }.bind(this));
     }
 
     takeLast(count: number) {
@@ -543,7 +550,7 @@ export class Collection<T> {
                 yield item;
                 ++i;
             }
-        }.call(this));
+        }.bind(this));
     }
 
     toArray() {
@@ -606,7 +613,7 @@ export class Collection<T> {
             for (let item of collection) {
                 yield item;
             }
-        }.call(this)).distinct();
+        }.bind(this)).distinct();
     }
 
     where(predicate: (item: T, index: number) => boolean) {
@@ -618,7 +625,7 @@ export class Collection<T> {
 
                 ++index;
             }
-        }).call(this));
+        }).bind(this));
     }
 
     static zip<TLeft, TRight>(leftCollection: Collection<TLeft>, rightCollection: Collection<TRight>): Collection<[TLeft, TRight]>;
@@ -639,7 +646,7 @@ export class Collection<T> {
                 else
                     yield [value, otherValue] as unknown as TResult;
             }
-        })());
+        }));
     }
 }
 
@@ -666,7 +673,7 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
     ) {
         super(null);
         this.sortedData = data;
-        this.data = linq(this);
+        this._data = linq(this)["_data"];
     }
 
     thenBy<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
@@ -677,7 +684,7 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
                     yield inner;
                 }
             }
-        }.call(this));
+        }.bind(this));
     }
 
     thenByDescending<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
