@@ -3,7 +3,7 @@
 
 &nbsp;
 
-Bear in mind that this library is still in alpha.
+Bear in mind that this library is still in beta.
 The first draft of methods has been written but there is limited test coverage and therefore likely bugs
 
 The most common methods, ```select```, ```where```, ```first``` etc. work well but more complex methods like groupBy will really punish large amounts of data with time complexity.
