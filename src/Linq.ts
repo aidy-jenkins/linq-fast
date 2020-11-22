@@ -93,7 +93,7 @@ export class Collection<T> {
     }
 
     cast<TResult extends "number" | "boolean" | "string" | "bigint">(type: TResult) {
-        return new Collection<TResult>(function* () {
+        return new Collection<PrimitiveTypeMap[TResult]>(function* () {
             for (let item of this.data) {
                 yield Collection.TypeMap[type](item);
             }

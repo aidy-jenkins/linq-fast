@@ -67,12 +67,142 @@ describe("Linq", () => {
         it("Should return the mean average for a set of numbers", () => {
             expect(testNumbers.average()).toBe(5.5);
         });
-    })
+    });
+
+    describe("Cast", () => {
+        it("Should convert the type of all items in the collection", () => {
+            let result = linq([1,2,3]).cast("string");
+            expect(result.toArray()).toEqual(["1", "2", "3"]);
+        });
+
+        it("Should convert the type of all items in the collection 2", () => {
+            let array = [1,2,3];
+            let result = linq(array).select(x => x.toString()).cast("number");
+            
+            expect(result.toArray()).toEqual(array);
+        })
+
+    });
 
     describe("Collection", () => {
         it("Should return a collection when passed an iterable", () => {
             let foo = linq([1]);
             expect(foo).toBeInstanceOf(Collection);
+        });
+    });
+
+    describe("Concat", () => {
+        it("Should return the concatenation of two sets", () => {
+            let result = testNumbers.concat(testNumbers);
+
+            let pureArray = testNumbers.toArray();
+            let pureConcat = pureArray.concat(pureArray);
+
+            expect(result.toArray()).toEqual(pureConcat);
+        });
+
+        it("Should not remove duplicate items", () => {
+            let collection = linq([1,2]).concat(linq([1]));
+
+            expect(collection.toArray()).toEqual([1,2,1]);
+        });
+    });
+
+    describe("Contains", () => {
+        it("Should return true if an item is contained in a collection", () => {
+            expect(testNumbers.contains(7)).toBe(true);
+        });
+
+        it("Should return false if an item is not contained in a collection", () => {
+            expect(testNumbers.contains(1000)).toBe(false);
+        });
+    });
+
+    describe("Count", () => {
+        it("Should return the accurate count of items in the collection", () => {
+            expect(testNumbers.count()).toBe(testNumbers.toArray().length);
+        });
+    });
+
+    describe("DefaultIfEmpty", () => {
+        it("Should return the collection if it contains values", () => {
+            let result = testNumbers.defaultIfEmpty();
+            expect(result).toBe(testNumbers);
+        });
+
+        it("Should return a singleton collection of the given default value if empty", () => {
+            let result = linq([]).defaultIfEmpty(7);
+            expect(result.toArray()).toEqual([7]);
+        });
+
+        it("Should return a singleton collection of null if no given default", () => {
+            let result = linq([]).defaultIfEmpty();
+            expect(result.toArray()).toEqual([null]);
+        });
+    });
+
+    describe("Distinct", () => {
+        it("Should return a distinct list of items by order of first occurrence", () => {
+            let result = testNumbers.concat(testNumbers).distinct();
+
+            expect(result.toArray()).toEqual(testNumbers.toArray());
+        });
+
+        it("Should return a distinct list of items as determined by the given comparer", () => {
+            let result = linq([1,2,3]).distinct(() => true);
+
+            expect(result.toArray()).toEqual([1]);
+        });
+    });
+
+    describe("ElementAt", () => {
+        it("Should return the element at the given index of the list", () => {
+            let array = testNumbers.toArray();
+
+            for(let i = 0; i < array.length; ++i) {
+                expect(testNumbers.elementAt(i)).toBe(array[i]);
+            }
+        });
+
+        it("Should throw if the index is outside the bounds of the collection", () => {
+            expect(() => testNumbers.elementAt(-1)).toThrowError("Index not found");
+        });
+    });
+
+    describe("ElementAtOrDefault", () => {
+        it("Should return the result of ElementAt if it has value", () => {
+            let array = testNumbers.toArray();
+
+            for(let i = 0; i < array.length; ++i) {
+                expect(testNumbers.elementAtOrDefault(i)).toBe(array[i]);
+            }
+        });
+
+        it("Should return null if the index was not found", () => {
+            expect(testNumbers.elementAtOrDefault(-1)).toBe(null);
+        });
+    });
+
+    describe("Empty", () => {
+        it("Should return an empty collection", () => {
+            let empty = Collection.empty();
+
+            expect(empty.any()).toBe(false);
+            expect(empty.toArray().length).toBe(0);
+        });
+    });
+
+    describe("Except", () => {
+        it("Should return items from the first list that are not in the second", () => {
+            let result = testNumbers.except(linq([1,2,3,4,5,6]));
+            
+            expect(result.toArray()).toEqual([7,8,9,10]);
+        });
+
+        it("Should return items where comparer is false", () => {
+            let result = testNumbers.except(linq([1]), (a, b) => a === 2 || b === 2);
+
+            expect(result.toArray()).toEqual([1,3,4,5,6,7,8,9,10]);
         });
     });
 
@@ -98,7 +228,32 @@ describe("Linq", () => {
 
             expect(result.first()).toBe(1);
         });
+
+        it("Should return the first item matching the predicate", () => {
+            expect(testNumbers.first(x => x === 2)).toBe(2);
+        });
+
+        it("Should throw if there are no items", () => {
+            expect(() => linq([]).first()).toThrowError("No value found");
+            expect(() => linq([1]).first(x => x === 2)).toThrowError("No value found");
+        });
     });
+
+    describe("FirstOrDefault", () => {
+        it("Should return the first item in the list", () => {
+            expect(testNumbers.firstOrDefault()).toBe(1);
+        });
+
+        it("Should return the first item matching the predicate", () => {
+            expect(testNumbers.firstOrDefault(x => x === 2)).toBe(2);
+        });
+
+        it("Should return null if there are no items", () => {
+            expect(linq([]).firstOrDefault()).toBe(null);
+
+            expect(linq([1]).firstOrDefault(x => x === 2)).toBe(null);
+        })
+    })
 
     describe("Select", () => {
         it("Should return the result of my callback function for each element", () => {
