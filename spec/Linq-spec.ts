@@ -252,8 +252,147 @@ describe("Linq", () => {
             expect(linq([]).firstOrDefault()).toBe(null);
 
             expect(linq([1]).firstOrDefault(x => x === 2)).toBe(null);
-        })
-    })
+        });
+    });
+
+    describe("GroupBy", () => {
+        it("Should group by the given key", () => {
+            let grouped = testNumbers.groupBy(x => (x < 5));
+            expect(grouped.first(group => group.key === true).all(x => (x < 5))).toBe(true);
+            expect(grouped.first(group => group.key === false).all(x => (x < 5))).toBe(false);
+        });
+
+        it("Should select by key and element", () => {
+            let grouped = testNumbers.groupBy(item => item, item => item.toString());
+            expect(grouped.first(group => group.key === 1).first()).toBe("1");
+        });
+    });
+
+    describe("GroupJoin", () => {
+        it("Should allow me to join two sets by a common key", () => {
+            let result = testNumbers.groupJoin(testNumbers, outer => outer, inner => inner, (outer, inner) => `${outer};${inner.first()}`);
+            
+            expect(result.toArray()).toEqual(testNumbers.select(x => `${x};${x}`).toArray());
+        });
+    });
+
+    describe("Intersect", () => {
+        it("Should return the intersection of two sets", () => {
+            let result = testNumbers.where(x => x <= 6).intersect(testNumbers.where(x => x >= 4));
+
+            expect(result.toArray()).toEqual([4,5,6]);
+        });
+
+        it("Should return empty if no intersection", () => {
+            let result = linq([1]).intersect(linq([2]));
+
+            expect(result.toArray()).toEqual([]);
+        });
+    });
+
+    describe("Join", () => {
+        it("Should allow me to join two sets by a common key", () => {
+            let result = testNumbers.join(testNumbers, outer => outer, inner => inner, (outer, inner) => `${outer};${inner}`);
+            
+            expect(result.toArray()).toEqual(testNumbers.select(x => `${x};${x}`).toArray());
+        
+        });
+    });
+
+    describe("Last", () => {
+        it("Should return the last item in a sequence", () => {
+            expect(testNumbers.last()).toBe(10);
+        });
+
+        it("Should return the last item for the given predicate", () => {
+            expect(testNumbers.last(x => x < 10)).toBe(9);
+        });
+
+        it("Should throw if no item found", () => {
+            expect(() => linq([]).last()).toThrowError("No item found");
+            expect(() => linq([1]).last(x => false)).toThrowError("No item found");
+        });
+    });
+
+    describe("LastOrDefault", () => {
+        it("Should return the last item in the list", () => {
+            expect(testNumbers.lastOrDefault()).toBe(10);
+        });
+
+        it("Should return the first item matching the predicate", () => {
+            expect(testNumbers.lastOrDefault(x => x === 2)).toBe(2);
+        });
+
+        it("Should return null if there are no items", () => {
+            expect(linq([]).lastOrDefault()).toBe(null);
+
+            expect(linq([1]).lastOrDefault(x => x === 2)).toBe(null);
+        });
+    });
+
+    describe("LongCount", () => {
+        it("Should return the number of elements in the collection", () => {
+            expect(Number(testNumbers.longCount())).toBe(10);
+        });
+
+        it("Should return the same value as Count", () => {
+            expect(Number(testStrings.longCount())).toBe(testStrings.count());
+        });
+
+        if(eval("BigInt") !== void 0) {
+            it("Should return bigint if available", () => {
+                expect(typeof testStrings.longCount()).toBe("bigint");
+            });
+        }
+    });
+
+    describe("Max", () => {
+        it("Should return the highest number in a collection", () => {
+            expect(testNumbers.max()).toBe(10);
+        });
+
+        it("Should return the highest number in an unordered collection", () => {
+            expect(testNumbers.reverse().max()).toBe(10);
+        });
+    });
+
+    describe("Min", () => {
+        it("Should return the lowest number in a collection", () => {
+            expect(testNumbers.min()).toBe(1);
+        });
+
+        it("Should return the lowest number in an unordered collection", () => {
+            expect(testNumbers.reverse().min()).toBe(1);
+        });
+    });
+
+    describe("OfType", () => {
+        let mixedCollection = linq([1,"2",3, "4"]);
+
+        it("Should return all the numbers in a mixed collection", () => {
+            let collection = mixedCollection.ofType("number");
+            expect(collection.toArray()).toEqual([1,3]);
+        });
+
+        it("Should return all the strings in a mixed collection", () => {
+            let collection = mixedCollection.ofType("string");
+            expect(collection.toArray()).toEqual(["2", "4"]);
+        });
+    });
+
+    describe("OrderBy", () => {
+        it("Should order items by the given key", () => {
+            let col = linq(testNumbers.toArray().reverse()).orderBy(item => item);
+
+            expect(col.toArray()).toEqual(testNumbers.toArray());
+        });
+
+        it("Should order strings by the given key", () => {
+            let col = testStrings.reverse().orderBy(item => item);
+
+            expect(col.toArray()).toEqual(testStrings.toArray());
+        });
+    });
 
     describe("Select", () => {
         it("Should return the result of my callback function for each element", () => {

@@ -660,20 +660,15 @@ export module Collection {
 
 class OrderedCollection<TOrderKey, T> extends Collection<T> {
 
-    protected sortedData: Iterable<[TOrderKey, T]>;
-
-    [Symbol.iterator] = function* (this: OrderedCollection<TOrderKey, T>) {
-        for (let [key, value] of this.sortedData) {
-            yield value;
-        }
-    };
+    protected sortedData: Generator<[TOrderKey, T]>;
 
     constructor(
-        data: Iterable<[TOrderKey, T]>
+        data: () => Generator<[TOrderKey, T]>
     ) {
         super(null);
-        this.sortedData = data;
-        this._data = linq(this)["_data"];
+        this.sortedData = data();
+        this._data = linq(this.sortedData).select(([key, value]) => value)["_data"];
+        this[Symbol.iterator] = this._data;
     }
 
     thenBy<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
