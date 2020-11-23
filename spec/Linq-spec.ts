@@ -394,6 +394,63 @@ describe("Linq", () => {
         });
     });
 
+    describe("OrderByDescending", () => {
+        it("Should order items by the given key", () => {
+            let col = linq(testNumbers.toArray()).orderByDescending(item => item);
+
+            expect(col.toArray()).toEqual(testNumbers.toArray().reverse());
+        });
+
+        it("Should order strings by the given key", () => {
+            let col = testStrings.orderByDescending(item => item);
+
+            expect(col.toArray()).toEqual(testStrings.toArray().reverse());
+        });
+    });
+
+    describe("Prepend", () => {
+        it("Should return a collection prefixed with the given item", () => {
+            let result = testNumbers.prepend(0);
+            
+            expect(result.count()).toBe(11);
+            expect(result.first()).toBe(0);
+        });
+    });
+
+    describe("Range", () => {
+        it("Should return a sequence of the given length", () => {
+            let result = Collection.range(0, 10);
+
+            expect(result.count()).toBe(10);
+        });
+
+        it("Should return the numbers from the given start", () => {
+            let result = Collection.range(1, 10);
+
+            expect(result.toArray()).toEqual(testNumbers.toArray());
+        });
+    });
+
+    describe("Repeat", () => {
+        it("Should return the count number of items", () => {
+            let result = Collection.repeat(1, 12);
+
+            expect(result.count()).toBe(12);
+        });
+
+        it("Should return the given item the given number of times", () => {
+            let result = Collection.repeat(1, 5);
+
+            expect(result.toArray()).toEqual([1,1,1,1,1]);
+        });
+    });
+
+    describe("Reverse", () => {
+        it("Should return the collection in reverse order", () => {
+            expect(testNumbers.reverse().toArray()).toEqual(testNumbers.toArray().reverse());
+        });
+    });
+
     describe("Select", () => {
         it("Should return the result of my callback function for each element", () => {
             let test = linq([1, 2, 3, 4]);
@@ -404,13 +461,277 @@ describe("Linq", () => {
         });
     });
 
+    describe("SelectMany", () => {
+        it("Should flatten a collection of collections", () => {
+            let result = testNumbers.select(num => linq([num])).selectMany(x => x);
+
+            expect(result.toArray()).toEqual(testNumbers.toArray());
+        });
+    });
+
+    describe("SequenceEqual", () => {
+        it("Should return true if two sequences are equal", () => {
+            let result = testNumbers.sequenceEqual(Collection.range(1, 10));
+
+            expect(result).toBe(true);
+        });
+
+        it("Should return false if two sequences are not equal", () => {
+            let result = testNumbers.sequenceEqual(Collection.range(0, 10));
+
+            expect(result).toBe(false);
+
+        });
+
+        it("Should return false for sequences of different lengths", () => {
+            let result = linq([1]).sequenceEqual(linq([1,2]));
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe("Single", () => {
+        it("Should throw if more than one item in sequence", () => {
+            expect(() => testNumbers.single()).toThrowError("More than one value present in sequence");
+        });
+
+        it("Should return an item if it is the only value in a sequence", () => {
+            let result = linq([1]).single();
+
+            expect(result).toBe(1);
+        });
+
+        it("Should return a single item matching the given predicate", () => {
+            let result = testNumbers.single(x => x === 2);
+
+            expect(result).toBe(2);
+        });
+
+        it("Should throw if no items in the sequence", () => {
+            expect(() => linq([]).single()).toThrowError("No value found");
+        });
+
+        it("Should throw if no items matching the predicate", () => {
+            expect(() => testNumbers.single(x => x === -1)).toThrowError("No value found");
+        });
+    });
+
+    describe("SingleOrDefault", () => {
+        it("Should throw if more than one item in sequence", () => {
+            expect(() => testNumbers.singleOrDefault()).toThrowError("More than one value present in sequence");
+        });
+
+        it("Should return an item if it is the only value in a sequence", () => {
+            let result = linq([1]).singleOrDefault();
+
+            expect(result).toBe(1);
+        });
+
+        it("Should return a single item matching the given predicate", () => {
+            let result = testNumbers.singleOrDefault(x => x === 2);
+
+            expect(result).toBe(2);
+        });
+
+        it("Should return null if no items in the sequence", () => {
+            expect(linq([]).singleOrDefault()).toBe(null);
+        });
+
+        it("Should return null if no items matching the predicate", () => {
+            expect(testNumbers.singleOrDefault(x => x === -1)).toBe(null);
+        });
+    });
+
+    describe("Skip", () => {
+        it("Returns a collection missing the given number of items", () => {
+            let result = testNumbers.skip(3);
+
+            expect(result.toArray()).toEqual([4,5,6,7,8,9,10]);
+        });
+
+        it("Returns empty if a collection has fewer items than skipped", () => {
+            let result = linq([1,2]).skip(4);
+
+            expect(result.toArray()).toEqual([]);
+        });
+    });
+
+    describe("SkipLast", () => {
+        it("Returns a collection missing the given number of items from the end", () => {
+            let result = testNumbers.skipLast(4);
+
+            expect(result.toArray()).toEqual([1,2,3,4,5,6]);
+        });
+
+        it("Returns empty if a collection has fewer items than skipped", () => {
+            let result = linq([1,2]).skip(4);
+
+            expect(result.toArray()).toEqual([]);
+        });
+    });
+
+    describe("SkipWhile", () => {
+        it("Should skip the first items for which the condition is true", () => {
+            let result = linq([1,2,3,1]).skipWhile(num => num < 3);
+
+            expect(result.toArray()).toEqual([3,1]);
+        });
+
+        it("Should return an empty list if all values match the condition", () => {
+            let result = linq([1,1,1]).skipWhile(num => num === 1);
+            
+            expect(result.toArray()).toEqual([]);
+        });
+
+        it("Should return empty for an empty collection", () => {
+            let result = linq([]).skipWhile(() => true);
+
+            expect(result.toArray()).toEqual([]);
+        });
+    });
+
+    describe("Sum", () => {
+        it("Should return the sum of a set of numbers", () => {
+            let sum = testNumbers.sum();
+
+            expect(sum).toBe(55);
+        });
+
+        it("Should throw for an empty collection", () => {
+            expect(() => Collection.empty<number>().sum()).toThrowError("No values in collection");
+        });
+    });
+
+    describe("Take", () => {
+        it("Should return a subset with the given number of items", () => {
+            let result = testNumbers.take(3);
+
+            expect(result.toArray()).toEqual([1,2,3]);
+        });
+
+        it("Should return a collection of all items if less than the given number", () => {
+            let result = linq([1,2]).take(4);
+
+            expect(result.toArray()).toEqual([1,2]);
+        });
+
+        it("Should return all items if count is negative", () => {
+            let result = testNumbers.take(-1);
+
+            expect(result.toArray()).toEqual(testNumbers.toArray());
+        });
+    });
+
+    describe("TakeLast", () => {
+        it("Should return a subset with the given number of items from the end", () => {
+            let result = testNumbers.takeLast(3);
+
+            expect(result.toArray()).toEqual([8,9,10]);
+        });
+
+        it("Should return a collection of all items if less than the given number", () => {
+            let result = linq([1,2]).takeLast(4);
+
+            expect(result.toArray()).toEqual([1,2]);
+        });
+
+        it("Should return an empty collection if count is negative", () => {
+            let result = testNumbers.takeLast(-1);
+
+            expect(result.toArray()).toEqual([]);
+        });
+    });
+
+    describe("TakeWhile", () => {
+        it("Should take the first items for which the condition is true", () => {
+            let result = linq([1,2,3,1]).takeWhile(num => num < 3);
+
+            expect(result.toArray()).toEqual([1,2]);
+        });
+
+        it("Should return all items if all values match the condition", () => {
+            let result = linq([1,1,1]).takeWhile(num => num === 1);
+            
+            expect(result.toArray()).toEqual([1,1,1]);
+        });
+
+        it("Should return empty for an empty collection", () => {
+            let result = linq([]).takeWhile(() => true);
+
+            expect(result.toArray()).toEqual([]);
+        });
+    });
+
     describe("ToArray", () => {
         it("Should return the contents of my collection as an array", () => {
             let test = linq([1,2,3]);
             
             let result = test.toArray();
 
+            expect(result).toBeInstanceOf(Array);
+
             expect(result).toEqual([1,2,3]);
+        });
+    });
+
+    describe("ToDictionary", () => {
+        it("Should return a Map representing the collection by the given key", () => {
+            let result = testStrings.toDictionary(x => x);
+
+            expect(result.get("A")).toBe("A");
+        });
+
+        it("Should allow separate key and element selection", () => {
+            let result = testNumbers.toDictionary(x => x, x => testStrings.elementAtOrDefault(x));
+
+            expect(result.get(1)).toBe("B");
+        })
+
+        it("Should throw for duplicate keys", () => {
+            expect(() => linq([1,1,1]).toDictionary(x => x)).toThrow();
+        });
+    });
+
+    describe("ToHashSet", () => {
+        it("Should return a set representing the collection", () => {
+            let result = testNumbers.toHashSet();
+
+            expect(Array.from(result.values())).toEqual(testNumbers.toArray());
+        });
+    });
+
+    describe("ToList", () => {
+        it("Should return the contents of my collection as an array", () => {
+            let test = linq([1,2,3]);
+            
+            let result = test.toArray();
+
+            expect(result).toBeInstanceOf(Array);
+
+            expect(result).toEqual([1,2,3]);
+        });
+    });
+
+    describe("ToLookup", () => {
+        it("Should return a set of items per given key", () => {
+            let result = testNumbers.toLookup(x => x < 5);
+
+            expect(result.get(true).toArray()).toEqual(testNumbers.where(x => x < 5).toArray());
+            expect(result.get(false).toArray()).toEqual(testNumbers.where(x => x >=5).toArray());
+        });
+    });
+
+    describe("Union", () => {
+        it("Should return the distinct union of two sets", () => {
+            let result = linq([1,1,1]).union(linq([2,1,1]));
+
+            expect(result.toArray()).toEqual([1,2]);
+        });
+
+        it("Should return one set concatenated with another where distinct", () => {
+            let result = testNumbers.union(testStrings as Collection<any>);
+
+            expect(result.toArray()).toEqual((testNumbers.toArray() as any[]).concat(testStrings.toArray()));
         });
     });
 
@@ -432,4 +753,19 @@ describe("Linq", () => {
             expect(count).toBe(1);
         })
     });
+
+    describe("Zip", () => {
+        it("Should return the index joined result of two sets", () => {
+            let result = Collection.zip(testNumbers, testNumbers);
+
+            expect(result.select(([left, right]) => left).toArray()).toEqual(testNumbers.toArray());
+            expect(result.select(([left, right]) => right).toArray()).toEqual(testNumbers.toArray());
+        });
+
+        it("Should return all matching indices from the shorter list if different lengths", () => {
+            let result = Collection.zip(testNumbers, testStrings);
+
+            expect(result.count()).toBe(testStrings.count());
+        });
+    })
 });

@@ -343,7 +343,7 @@ export class Collection<T> {
 
     static range(start: number, count: number) {
         return new Collection<number>((function* () {
-            for (let i = start; i <= count; ++i)
+            for (let i = start; i < (start + count); ++i)
                 yield i;
         }));
     }
@@ -457,6 +457,9 @@ export class Collection<T> {
             }
         }
 
+        if(!found)
+            throw new TypeError("No value found");
+
         return item;
     }
 
@@ -487,8 +490,9 @@ export class Collection<T> {
         return new Collection<T>(function* (this: Collection<T>) {
             let i = 0;
             for (let item of this.data) {
-                if (i < count) continue;
-                yield item;
+                if (i >= count) {
+                    yield item;
+                }
                 ++i;
             }
         }.bind(this));
