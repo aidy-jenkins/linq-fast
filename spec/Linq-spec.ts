@@ -258,8 +258,8 @@ describe("Linq", () => {
     describe("GroupBy", () => {
         it("Should group by the given key", () => {
             let grouped = testNumbers.groupBy(x => (x < 5));
-            expect(grouped.first(group => group.key === true).all(x => (x < 5))).toBe(true);
             expect(grouped.first(group => group.key === false).all(x => (x < 5))).toBe(false);
+            expect(grouped.first(group => group.key === true).all(x => (x < 5))).toBe(true);
         });
 
         it("Should select by key and element", () => {
@@ -659,6 +659,18 @@ describe("Linq", () => {
             let result = linq([]).takeWhile(() => true);
 
             expect(result.toArray()).toEqual([]);
+        });
+    });
+
+    describe("ThenBy", () => {
+        const [zak, adam, will, hannah] = [{forename: "Zak", surname: "Smith"}, { forename: "Adam", surname: "Smith"}, {forename: "William", surname: "Johnson"}, { forename: "Hannah", surname: "Yang" }];
+        const testPeople = linq([zak, adam, will, hannah]);
+        const testPeopleBySurname = testPeople.orderBy(person => person.surname);
+        
+        it("Should apply a secondary sort after an order by", () => {
+            let result = testPeopleBySurname.thenBy(person => person.forename);
+
+            expect(result.toArray()).toEqual([will, adam, zak, hannah]);
         });
     });
 

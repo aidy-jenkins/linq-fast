@@ -664,23 +664,35 @@ export module Collection {
 
 class OrderedCollection<TOrderKey, T> extends Collection<T> {
 
-    protected sortedData: Generator<[TOrderKey, T]>;
+    protected _sortedData: () => Generator<[TOrderKey, T]>;
+    protected get sortedData() { 
+        return this._sortedData();
+    };
+
+    
 
     constructor(
         data: () => Generator<[TOrderKey, T]>
     ) {
         super(null);
-        this.sortedData = data();
-        this._data = linq(this.sortedData).select(([key, value]) => value)["_data"];
+        this._sortedData = data;
+        this._data = function* (this: OrderedCollection<TOrderKey, T>) {
+            for(let [key, value] of this.sortedData) {
+                yield value;
+            }
+        }.bind(this);
+        
         this[Symbol.iterator] = this._data;
     }
 
     thenBy<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
         return new OrderedCollection<TKey, T>(function* (this: OrderedCollection<TOrderKey, T>) {
-            let grouped = linq(this.sortedData).groupBy(([key, _]) => key, ([_, value]) => value); //TODO: <- Improve this
-            for (let item of grouped) {
-                for (let inner of item.orderBy(keySelector, comparer)) {
-                    yield inner;
+            let grouped = linq(Array.from(this.sortedData)).groupBy(([key, value]) => key);
+            
+            for(let group of grouped) {
+                let sortedGroup = linq(group).orderBy(([_, value]) => keySelector(value), comparer);
+                for(let [key, [outerKey, value]] of sortedGroup.sortedData) {
+                    yield [key, value];
                 }
             }
         }.bind(this));
