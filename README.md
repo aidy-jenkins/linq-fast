@@ -4,6 +4,7 @@
 &nbsp;
 
 Working versions of all Enumerable methods are implemented and the library is ready for use
+
 Future updates will focus on performance enhancements and greater test coverage
 
 &nbsp;
