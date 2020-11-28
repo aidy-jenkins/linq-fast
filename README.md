@@ -3,12 +3,8 @@
 
 &nbsp;
 
-Bear in mind that this library is still in beta.
-The first draft of methods has been written but there is limited test coverage and therefore likely bugs
-
-The most common methods, ```select```, ```where```, ```first``` etc. work well but more complex methods like groupBy will really punish large amounts of data with time complexity.
-
-The aim is to get working versions implemented so the library can actually be used and update with more performant approaches later
+Working versions of all Enumerable methods are implemented and the library is ready for use
+Future updates will focus on performance enhancements and greater test coverage
 
 &nbsp;
 
@@ -41,7 +37,7 @@ for(let item of oddNumbers) {
 
 &nbsp;
 
-No 3rd party libs, only the vanilla JS standard library
+No 3rd party libs, only the vanilla JS standard library (The test suite uses Jasmine)
 
 This library can be used in browsers or NodeJS projects, some notes for older browser compatibility follow:
 
