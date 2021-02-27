@@ -171,6 +171,8 @@ export class Collection<T> {
         catch (err) {
             if (err.message === "Index not found")
                 return null;
+
+            throw err;
         }
     }
 
@@ -617,7 +619,7 @@ export class Collection<T> {
             for (let item of collection) {
                 yield item;
             }
-        }.bind(this)).distinct();
+        }.bind(this)).distinct(comparer);
     }
 
     where(predicate: (item: T, index: number) => boolean) {
