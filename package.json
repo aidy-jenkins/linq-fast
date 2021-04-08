@@ -11,8 +11,8 @@
     "@types/jasmine": "^3.6.1",
     "glob": "^7.1.6",
     "jasmine": "^3.6.3",
-    "ts-node": "^9.0.0",
-    "typescript": "^4.0.5"
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
   },
   "scripts": {
     "test": "ts-node node_modules/jasmine/bin/jasmine"
@@ -31,7 +31,7 @@
     "table",
     "filtering",
     "defer",
-    "query"    
+    "query"
   ],
   "author": "Aidy Jenkins",
   "license": "MIT",
