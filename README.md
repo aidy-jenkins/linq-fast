@@ -57,7 +57,7 @@ The method signatures are largely the same as their .NET counterparts, except th
 
 &nbsp;
 
-* ```Collection<T>``` instead of ```IEnumerable<T>```, this is to better signify what this version represents, an actual collection of objects with methods rather than an interface with extension methods
+* ```Enumerable<T>``` instead of ```IEnumerable<T>```, this is to better signify what this version represents, an actual collection of objects with methods rather than an interface with extension methods
 
 * ```toList()``` returns a JS array, which makes it identical in function to ```toArray()```, JS arrays are already similar to the .NET list type in that they can be dynamically resized. The ```toArray()``` method could have been mapped to a fixed-length array, but that would likely be unintuitive for most use cases.
 
