@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ADTJ/linq-fast.git"
+    "url": "git+https://github.com/aidy-jenkins/linq-fast.git"
   },
   "keywords": [
     "data",
@@ -35,7 +35,7 @@
   "author": "Aidy Jenkins",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ADTJ/linq-fast/issues"
+    "url": "https://github.com/aidy-jenkins/linq-fast/issues"
   },
-  "homepage": "https://github.com/ADTJ/linq-fast#readme"
+  "homepage": "https://github.com/aidy-jenkins/linq-fast#readme"
 }
