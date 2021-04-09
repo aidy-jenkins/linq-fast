@@ -201,7 +201,7 @@ export class Enumerable<T> {
 
         let {success, value} = this.first_internal();
         if (!success) {
-            return null;
+            throw new TypeError("No value found");
         }
 
         return value;
