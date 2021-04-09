@@ -663,7 +663,13 @@ describe("Linq", () => {
     });
 
     describe("ThenBy", () => {
-        const [zak, adam, will, hannah] = [{forename: "Zak", surname: "Smith"}, { forename: "Adam", surname: "Smith"}, {forename: "William", surname: "Johnson"}, { forename: "Hannah", surname: "Yang" }];
+        const [zak, adam, will, hannah] = [
+            {forename: "Zak", surname: "Smith", age: 28}, 
+            {forename: "Adam", surname: "Smith", age: 29}, 
+            {forename: "William", surname: "Johnson", age: 25}, 
+            {forename: "Hannah", surname: "Yang", age: 24}
+        ];
+        
         const testPeople = linq([zak, adam, will, hannah]);
         const testPeopleBySurname = testPeople.orderBy(person => person.surname);
         
@@ -671,6 +677,18 @@ describe("Linq", () => {
             let result = testPeopleBySurname.thenBy(person => person.forename);
 
             expect(result.toArray()).toEqual([will, adam, zak, hannah]);
+        });
+
+        it("Should apply a tertiary sort after a thenBy", () => {
+            let zak2 = JSON.parse(JSON.stringify(zak)) as typeof zak;
+            zak2.age = 27;
+
+            let result = linq([zak, zak2, adam, will, hannah])
+                            .orderBy(person => person.surname)
+                            .thenBy(person => person.forename)
+                            .thenBy(person => person.age);
+
+            expect(result.toArray()).toEqual([will, adam, zak2, zak, hannah]);
         });
     });
 
