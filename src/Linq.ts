@@ -1,5 +1,5 @@
 export const Linq = <T = any>(data: Iterable<T>) => {
-    return new Collection<T>(function* () {
+    return new Enumerable<T>(function* () {
         for(let item of data) {
             yield item;
         }
@@ -7,11 +7,14 @@ export const Linq = <T = any>(data: Iterable<T>) => {
 };
 
 type Comparer<TLeft, TRight = TLeft> = (a: TLeft, b: TRight) => boolean;
+type OrderComparer<TLeft, TRight = TLeft> = (a: TLeft, b: TRight) => -1 | 0 | 1;
 type Predicate<T> = (value: T) => boolean;
-interface GroupItem<TKey, TElement> extends Collection<TElement> {
+
+interface GroupItem<TKey, TElement> extends Enumerable<TElement> {
     key: TKey;
 }
-interface Grouping<TKey, TElement> extends Collection<GroupItem<TKey, TElement>> {
+
+interface Grouping<TKey, TElement> extends Enumerable<GroupItem<TKey, TElement>> {
 }
 
 interface PrimitiveTypeMap {
@@ -21,7 +24,7 @@ interface PrimitiveTypeMap {
     "bigint": bigint;
 }
 
-export class Collection<T> {
+export class Enumerable<T> {
 
     private static readonly TypeMap = {
         "number": Number,
@@ -79,7 +82,7 @@ export class Collection<T> {
     }
 
     append(value: T) {
-        return new Collection<T>(function* () {
+        return new Enumerable<T>(function* () {
             for (let item of this.data) {
                 yield item;
             }
@@ -93,15 +96,15 @@ export class Collection<T> {
     }
 
     cast<TResult extends "number" | "boolean" | "string" | "bigint">(type: TResult) {
-        return new Collection<PrimitiveTypeMap[TResult]>(function* () {
+        return new Enumerable<PrimitiveTypeMap[TResult]>(function* () {
             for (let item of this.data) {
-                yield Collection.TypeMap[type](item);
+                yield Enumerable.TypeMap[type](item);
             }
         }.bind(this));
     }
 
-    concat(collection: Collection<T>) {
-        return new Collection<T>(function* (this: Collection<T>) {
+    concat(collection: Enumerable<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             for (let item of this.data) {
                 yield item;
             }
@@ -142,7 +145,7 @@ export class Collection<T> {
 
         let returned = [] as T[];
 
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             for (let item of this.data) {
                 if (returned.every(value => !comparer(value, item))) { // OOOOFF this feels expensive, TODO think of a better way (but how without being able to hash?)
                     returned.push(item);
@@ -153,34 +156,39 @@ export class Collection<T> {
     }
 
     elementAt(index: number) {
+        let { success, value } = this.elementAt_internal(index);
+
+        if(!success)
+            throw new TypeError("Index not found");
+
+        return value;
+    }
+
+    elementAtOrDefault(index: number) {
+        let {success, value } = this.elementAt_internal(index);
+        if(!success)
+            return null;
+
+        return value;
+    }
+
+    private elementAt_internal(index: number): { success: boolean, value: T } {
         let i = 0;
         for (let item of this.data) {
             if (i === index)
-                return item;
+                return { success: true, value: item};
 
             ++i;
         }
 
-        throw new TypeError("Index not found");
-    }
-
-    elementAtOrDefault(index: number) {
-        try {
-            return this.elementAt(index);
-        }
-        catch (err) {
-            if (err.message === "Index not found")
-                return null;
-
-            throw err;
-        }
+        return {success: false, value: null };
     }
 
     static empty<TResult>() {
         return linq([] as TResult[]);
     }
 
-    except(collection: Collection<T>, comparer?: Comparer<T>) {
+    except(collection: Enumerable<T>, comparer?: Comparer<T>) {
         if (!comparer)
             comparer = (a, b) => a === b;
 
@@ -191,25 +199,31 @@ export class Collection<T> {
         if (predicate)
             return this.where(predicate).first();
 
+        let {success, value} = this.first_internal();
+        if (!success) {
+            return null;
+        }
+
+        return value;
+    }
+
+    firstOrDefault(predicate?: Predicate<T>): T {
+        if (predicate)
+            return this.where(predicate).firstOrDefault();
+
+        let {success, value} = this.first_internal();
+        if (!success) {
+            return null;
+        }
+
+        return value;
+    }
+
+    private first_internal(): { success: boolean, value: T} {
         let iterator = this.data[Symbol.iterator]();
         let { done, value } = iterator.next();
 
-        if (done)
-            throw new TypeError("No value found");
-        else
-            return value;
-    }
-
-    firstOrDefault(predicate?: Predicate<T>) {
-        try {
-            return this.first(predicate);
-        }
-        catch (err) {
-            if (err.message === "No value found")
-                return null;
-            else
-                throw err;
-        }
+        return {success: !done, value };
     }
 
     groupBy<TKey>(keySelector: (item: T) => TKey): Grouping<TKey, T>;
@@ -227,7 +241,7 @@ export class Collection<T> {
         if (!elementSelector) elementSelector = x => x as any as TElement; //In this overload TElement must be equal to T
         if (!comparer) comparer = (a, b) => a === b;
 
-        return new Collection<GroupItem<TKey, TResult>>(function* (this: Collection<T>) {
+        return new Enumerable<GroupItem<TKey, TResult>>(function* (this: Enumerable<T>) {
             let keys = this.select(keySelector).distinct();
 
             for (let key of keys) {
@@ -241,19 +255,19 @@ export class Collection<T> {
         }.bind(this)) as Grouping<TKey, TResult>;
     }
 
-    groupJoin<TInner, TKey, TResult>(inner: Collection<TInner>, outerKeySelector: (item: T) => TKey, innerKeySelector: (item: TInner) => TKey, resultSelector: (left: T, right: Collection<TInner>) => TResult, comparer?: Comparer<TKey>) {
+    groupJoin<TInner, TKey, TResult>(inner: Enumerable<TInner>, outerKeySelector: (item: T) => TKey, innerKeySelector: (item: TInner) => TKey, resultSelector: (left: T, right: Enumerable<TInner>) => TResult, comparer?: Comparer<TKey>) {
         if (!comparer) comparer = (a, b) => a === b;
 
         return this.select(item => resultSelector(item, inner.where(innerItem => comparer(outerKeySelector(item), innerKeySelector(innerItem)))));
     }
 
-    intersect(collection: Collection<T>, comparer?: Comparer<T>) {
+    intersect(collection: Enumerable<T>, comparer?: Comparer<T>) {
         if (!comparer) comparer = (a, b) => a === b;
 
         return this.where(item => collection.contains(item, comparer));
     }
 
-    join<TInner, TKey, TResult>(inner: Collection<TInner>, outerKeySelector: (item: T) => TKey, innerKeySelector: (item: TInner) => TKey, resultSelector: (left: T, right: TInner) => TResult, comparer?: Comparer<TKey>): Collection<TResult> {
+    join<TInner, TKey, TResult>(inner: Enumerable<TInner>, outerKeySelector: (item: T) => TKey, innerKeySelector: (item: TInner) => TKey, resultSelector: (left: T, right: TInner) => TResult, comparer?: Comparer<TKey>): Enumerable<TResult> {
         if (!comparer) comparer = (a, b) => a === b;
 
         return this.selectMany(item => inner.where(innerItem => comparer(outerKeySelector(item), innerKeySelector(innerItem))).select(innerItem => resultSelector(item, innerItem)));
@@ -315,13 +329,13 @@ export class Collection<T> {
         return array.reduce((prev, curr) => prev < curr ? prev : curr) as TNum;
     }
 
-    ofType<TResult extends "number" | "boolean" | "string" | "bigint">(type: TResult): Collection<PrimitiveTypeMap[TResult]> {
+    ofType<TResult extends "number" | "boolean" | "string" | "bigint">(type: TResult): Enumerable<PrimitiveTypeMap[TResult]> {
         return this.where(item => typeof item === type) as any;
     }
 
-    orderBy<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
+    orderBy<TKey>(keySelector: (value: T) => TKey, comparer?: OrderComparer<TKey>) {
         if (!comparer) comparer = (a, b) => a < b ? -1 : 1;
-        return new OrderedCollection<TKey, T>(function* (this: Collection<T>) {
+        return new OrderedEnumerable<TKey, T>(function* (this: Enumerable<T>) {
             let values = this.select(item => [keySelector(item), item] as [TKey, T]).toArray();
             values.sort(([leftKey, _], [rightKey, __]) => comparer(leftKey, rightKey));
             for (let value of values)
@@ -329,13 +343,13 @@ export class Collection<T> {
         }.bind(this));
     }
 
-    orderByDescending<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
+    orderByDescending<TKey>(keySelector: (value: T) => TKey, comparer?: OrderComparer<TKey>) {
         if (!comparer) comparer = (a, b) => a < b ? -1 : 1;
         return this.orderBy(keySelector, (a, b) => (comparer(a, b) * -1) as -1 | 0 | 1);
     }
 
     prepend(value: T) {
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             yield value;
             for (let item of this.data) {
                 yield item;
@@ -344,21 +358,21 @@ export class Collection<T> {
     }
 
     static range(start: number, count: number) {
-        return new Collection<number>((function* () {
+        return new Enumerable<number>((function* () {
             for (let i = start; i < (start + count); ++i)
                 yield i;
         }));
     }
 
     static repeat<T>(value: T, count: number) {
-        return new Collection<T>((function* () {
+        return new Enumerable<T>((function* () {
             for (let i = 0; i < count; ++i)
                 yield value;
         }));
     }
 
     reverse() {
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             let values = this.toArray().reverse();
             for (let item of values)
                 yield item;
@@ -378,8 +392,8 @@ export class Collection<T> {
 
     }
 
-    select<TOut>(callback: (value: T, index: number) => TOut): Collection<TOut> {
-        return new Collection((function* (this: Collection<T>) {
+    select<TOut>(callback: (value: T, index: number) => TOut): Enumerable<TOut> {
+        return new Enumerable((function* (this: Enumerable<T>) {
             let iterator = this.data[Symbol.iterator]();
 
             for (let index = 0; true; ++index) {
@@ -391,12 +405,12 @@ export class Collection<T> {
         }).bind(this));
     }
 
-    selectMany<TResult>(selector: (item: T, index: number) => Collection<TResult>): Collection<TResult>;
-    selectMany<TCollection, TResult>(collectionSelector: (item: T, index: number) => Collection<TCollection>, resultSelector: (item: T, collection: TCollection) => TResult): Collection<TResult>;
-    selectMany<TCollection, TResult>(selector: (value: T, index: number) => Collection<TResult> | Collection<TCollection>, resultSelector?: (item: T, collection: TCollection) => TResult): Collection<TResult> {
+    selectMany<TResult>(selector: (item: T, index: number) => Enumerable<TResult>): Enumerable<TResult>;
+    selectMany<TCollection, TResult>(collectionSelector: (item: T, index: number) => Enumerable<TCollection>, resultSelector: (item: T, collection: TCollection) => TResult): Enumerable<TResult>;
+    selectMany<TCollection, TResult>(selector: (value: T, index: number) => Enumerable<TResult> | Enumerable<TCollection>, resultSelector?: (item: T, collection: TCollection) => TResult): Enumerable<TResult> {
         if (!resultSelector) resultSelector = (_, x) => x as any as TResult;
 
-        return new Collection<TResult>(function* (this: Collection<T>) {
+        return new Enumerable<TResult>(function* (this: Enumerable<T>) {
             let iterator = this.data[Symbol.iterator]();
 
             for (let index = 0; true; ++index) {
@@ -418,7 +432,7 @@ export class Collection<T> {
         }.bind(this));
     }
 
-    sequenceEqual(otherCollection: Collection<T>, comparer?: Comparer<T>) {
+    sequenceEqual(otherCollection: Enumerable<T>, comparer?: Comparer<T>) {
         if (!comparer) comparer = (a, b) => a === b;
 
         let iterator = this.data[Symbol.iterator]();
@@ -489,7 +503,7 @@ export class Collection<T> {
     }
 
     skip(count: number) {
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             let i = 0;
             for (let item of this.data) {
                 if (i >= count) {
@@ -506,7 +520,7 @@ export class Collection<T> {
     }
 
     skipWhile(condition: (value: T, index: number) => boolean) {
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             let i = 0;
             let passed = false;
             for (let item of this.data) {
@@ -531,7 +545,7 @@ export class Collection<T> {
     }
 
     take(count: number) {
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             let i = 0;
             for (let item of this.data) {
                 if (i === count) break;
@@ -542,12 +556,12 @@ export class Collection<T> {
     }
 
     takeLast(count: number) {
-        if (count <= 0) return Collection.empty<T>();
+        if (count <= 0) return Enumerable.empty<T>();
         return this.reverse().take(count).reverse();
     }
 
     takeWhile(condition: (value: T, index: number) => boolean) {
-        return new Collection<T>(function* (this: Collection<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             let i = 0;
             for (let item of this.data) {
                 if (!condition(item, i))
@@ -591,9 +605,9 @@ export class Collection<T> {
         return this.toArray();
     }
 
-    toLookup<TKey>(keySelector: (value: T) => TKey, additionalParameters?: { comparer: Comparer<TKey> }): Map<TKey, Collection<T>>;
-    toLookup<TKey, TValue>(keySelector: (value: T) => TKey, elementSelector: (value: T) => TValue, comparer?: Comparer<TKey>): Map<TKey, Collection<TValue>>;
-    toLookup<TKey, TValue = T>(keySelector: (value: T) => TKey, arg1?: ((value: T) => TValue) | { comparer: Comparer<TKey> }, comparer?: Comparer<TKey>): Map<TKey, Collection<TValue>> {
+    toLookup<TKey>(keySelector: (value: T) => TKey, additionalParameters?: { comparer: Comparer<TKey> }): Map<TKey, Enumerable<T>>;
+    toLookup<TKey, TValue>(keySelector: (value: T) => TKey, elementSelector: (value: T) => TValue, comparer?: Comparer<TKey>): Map<TKey, Enumerable<TValue>>;
+    toLookup<TKey, TValue = T>(keySelector: (value: T) => TKey, arg1?: ((value: T) => TValue) | { comparer: Comparer<TKey> }, comparer?: Comparer<TKey>): Map<TKey, Enumerable<TValue>> {
         let elementSelector: (value: T) => TValue;
         if (arg1) {
             if (typeof arg1 === 'function')
@@ -602,17 +616,17 @@ export class Collection<T> {
                 comparer = arg1.comparer;
         }
         let grouped = this.groupBy(keySelector, { comparer: comparer, elementSelector: elementSelector } as Collection.GroupByArgs<T, TKey, TValue, TValue>);
-        let map = new Map<TKey, Collection<TValue>>();
+        let map = new Map<TKey, Enumerable<TValue>>();
 
         for (let item of grouped) {
-            map.set(item.key, item as Collection<TValue>);
+            map.set(item.key, item as Enumerable<TValue>);
         }
 
         return map;
     }
 
-    union(collection: Collection<T>, comparer?: Comparer<T>) {
-        return new Collection<T>(function* (this: Collection<T>) {
+    union(collection: Enumerable<T>, comparer?: Comparer<T>) {
+        return new Enumerable<T>(function* (this: Enumerable<T>) {
             for (let item of this.data) {
                 yield item;
             }
@@ -623,7 +637,7 @@ export class Collection<T> {
     }
 
     where(predicate: (item: T, index: number) => boolean) {
-        return new Collection<T>((function* () {
+        return new Enumerable<T>((function* () {
             let index = 0;
             for (let item of this.data) {
                 if (predicate(item, index))
@@ -634,10 +648,10 @@ export class Collection<T> {
         }).bind(this));
     }
 
-    static zip<TLeft, TRight>(leftCollection: Collection<TLeft>, rightCollection: Collection<TRight>): Collection<[TLeft, TRight]>;
-    static zip<TLeft, TRight, TResult>(leftCollection: Collection<TLeft>, rightCollection: Collection<TRight>, resultSelector: (left: TLeft, right: TRight) => TResult): Collection<TResult>;
-    static zip<TLeft, TRight, TResult = [TLeft, TRight]>(leftCollection: Collection<TLeft>, rightCollection: Collection<TRight>, resultSelector?: (left: TLeft, right: TRight) => TResult) {
-        return new Collection<TResult>((function* () {
+    static zip<TLeft, TRight>(leftCollection: Enumerable<TLeft>, rightCollection: Enumerable<TRight>): Enumerable<[TLeft, TRight]>;
+    static zip<TLeft, TRight, TResult>(leftCollection: Enumerable<TLeft>, rightCollection: Enumerable<TRight>, resultSelector: (left: TLeft, right: TRight) => TResult): Enumerable<TResult>;
+    static zip<TLeft, TRight, TResult = [TLeft, TRight]>(leftCollection: Enumerable<TLeft>, rightCollection: Enumerable<TRight>, resultSelector?: (left: TLeft, right: TRight) => TResult) {
+        return new Enumerable<TResult>((function* () {
             let leftIterator = leftCollection.data[Symbol.iterator]();
             let rightIterator = rightCollection.data[Symbol.iterator]();
 
@@ -659,12 +673,12 @@ export class Collection<T> {
 export module Collection {
     export interface GroupByArgs<T, TKey, TElement, TResult> {
         elementSelector?: (item: T) => TElement;
-        resultSelector: (key: TKey, values: Collection<TElement>) => TResult;
+        resultSelector: (key: TKey, values: Enumerable<TElement>) => TResult;
         comparer?: Comparer<TKey>;
     }
 }
 
-class OrderedCollection<TOrderKey, T> extends Collection<T> {
+class OrderedEnumerable<TOrderKey, T> extends Enumerable<T> {
 
     protected _sortedData: () => Generator<[TOrderKey, T]>;
     protected get sortedData() { 
@@ -678,7 +692,7 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
     ) {
         super(null);
         this._sortedData = data;
-        this._data = function* (this: OrderedCollection<TOrderKey, T>) {
+        this._data = function* (this: OrderedEnumerable<TOrderKey, T>) {
             for(let [key, value] of this.sortedData) {
                 yield value;
             }
@@ -687,8 +701,8 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
         this[Symbol.iterator] = this._data;
     }
 
-    thenBy<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
-        return new OrderedCollection<TKey, T>(function* (this: OrderedCollection<TOrderKey, T>) {
+    thenBy<TKey>(keySelector: (value: T) => TKey, comparer?: OrderComparer<TKey>) {
+        return new OrderedEnumerable<TKey, T>(function* (this: OrderedEnumerable<TOrderKey, T>) {
             let grouped = linq(Array.from(this.sortedData)).groupBy(([key, value]) => key);
             
             for(let group of grouped) {
@@ -700,10 +714,13 @@ class OrderedCollection<TOrderKey, T> extends Collection<T> {
         }.bind(this));
     }
 
-    thenByDescending<TKey>(keySelector: (value: T) => TKey, comparer?: (a: TKey, b: TKey) => -1 | 0 | 1) {
+    thenByDescending<TKey>(keySelector: (value: T) => TKey, comparer?: OrderComparer<TKey>) {
         if (!comparer) comparer = (a, b) => a < b ? -1 : 1;
         return this.thenBy(keySelector, (a, b) => (comparer(a, b) * -1) as -1 | 0 | 1);
     }
 }
 
 export const linq = Linq;
+
+/** @deprecated Use Enumerable instead */
+export class Collection<T> extends Enumerable<T> {}
