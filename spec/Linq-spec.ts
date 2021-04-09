@@ -1,4 +1,4 @@
-import {Collection, linq} from "../src/Linq";
+import {Enumerable, linq} from "../src/Linq";
 
 describe("Linq", () => {
 
@@ -84,10 +84,10 @@ describe("Linq", () => {
 
     });
 
-    describe("Collection", () => {
+    describe("Enumerable", () => {
         it("Should return a collection when passed an iterable", () => {
             let foo = linq([1]);
-            expect(foo).toBeInstanceOf(Collection);
+            expect(foo).toBeInstanceOf(Enumerable);
         });
     });
 
@@ -185,7 +185,7 @@ describe("Linq", () => {
 
     describe("Empty", () => {
         it("Should return an empty collection", () => {
-            let empty = Collection.empty();
+            let empty = Enumerable.empty();
 
             expect(empty.any()).toBe(false);
             expect(empty.toArray().length).toBe(0);
@@ -367,15 +367,15 @@ describe("Linq", () => {
     });
 
     describe("OfType", () => {
-        let mixedCollection = linq([1,"2",3, "4"]);
+        let mixedEnumerable = linq([1,"2",3, "4"]);
 
         it("Should return all the numbers in a mixed collection", () => {
-            let collection = mixedCollection.ofType("number");
+            let collection = mixedEnumerable.ofType("number");
             expect(collection.toArray()).toEqual([1,3]);
         });
 
         it("Should return all the strings in a mixed collection", () => {
-            let collection = mixedCollection.ofType("string");
+            let collection = mixedEnumerable.ofType("string");
             expect(collection.toArray()).toEqual(["2", "4"]);
         });
     });
@@ -419,13 +419,13 @@ describe("Linq", () => {
 
     describe("Range", () => {
         it("Should return a sequence of the given length", () => {
-            let result = Collection.range(0, 10);
+            let result = Enumerable.range(0, 10);
 
             expect(result.count()).toBe(10);
         });
 
         it("Should return the numbers from the given start", () => {
-            let result = Collection.range(1, 10);
+            let result = Enumerable.range(1, 10);
 
             expect(result.toArray()).toEqual(testNumbers.toArray());
         });
@@ -433,13 +433,13 @@ describe("Linq", () => {
 
     describe("Repeat", () => {
         it("Should return the count number of items", () => {
-            let result = Collection.repeat(1, 12);
+            let result = Enumerable.repeat(1, 12);
 
             expect(result.count()).toBe(12);
         });
 
         it("Should return the given item the given number of times", () => {
-            let result = Collection.repeat(1, 5);
+            let result = Enumerable.repeat(1, 5);
 
             expect(result.toArray()).toEqual([1,1,1,1,1]);
         });
@@ -471,13 +471,13 @@ describe("Linq", () => {
 
     describe("SequenceEqual", () => {
         it("Should return true if two sequences are equal", () => {
-            let result = testNumbers.sequenceEqual(Collection.range(1, 10));
+            let result = testNumbers.sequenceEqual(Enumerable.range(1, 10));
 
             expect(result).toBe(true);
         });
 
         it("Should return false if two sequences are not equal", () => {
-            let result = testNumbers.sequenceEqual(Collection.range(0, 10));
+            let result = testNumbers.sequenceEqual(Enumerable.range(0, 10));
 
             expect(result).toBe(false);
 
@@ -598,7 +598,7 @@ describe("Linq", () => {
         });
 
         it("Should throw for an empty collection", () => {
-            expect(() => Collection.empty<number>().sum()).toThrowError("No values in collection");
+            expect(() => Enumerable.empty<number>().sum()).toThrowError("No values in collection");
         });
     });
 
@@ -759,7 +759,7 @@ describe("Linq", () => {
         });
 
         it("Should return one set concatenated with another where distinct", () => {
-            let result = testNumbers.union(testStrings as Collection<any>);
+            let result = testNumbers.union(testStrings as Enumerable<any>);
 
             expect(result.toArray()).toEqual((testNumbers.toArray() as any[]).concat(testStrings.toArray()));
         });
@@ -786,14 +786,14 @@ describe("Linq", () => {
 
     describe("Zip", () => {
         it("Should return the index joined result of two sets", () => {
-            let result = Collection.zip(testNumbers, testNumbers);
+            let result = Enumerable.zip(testNumbers, testNumbers);
 
             expect(result.select(([left, right]) => left).toArray()).toEqual(testNumbers.toArray());
             expect(result.select(([left, right]) => right).toArray()).toEqual(testNumbers.toArray());
         });
 
         it("Should return all matching indices from the shorter list if different lengths", () => {
-            let result = Collection.zip(testNumbers, testStrings);
+            let result = Enumerable.zip(testNumbers, testStrings);
 
             expect(result.count()).toBe(testStrings.count());
         });
