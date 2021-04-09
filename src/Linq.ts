@@ -227,11 +227,11 @@ export class Enumerable<T> {
     }
 
     groupBy<TKey>(keySelector: (item: T) => TKey): Grouping<TKey, T>;
-    groupBy<TKey, TElement, TResult>(keySelector: (item: T) => TKey, options: Collection.GroupByArgs<T, TKey, TElement, TResult>): Grouping<TKey, TResult>;
+    groupBy<TKey, TElement, TResult>(keySelector: (item: T) => TKey, options: Enumerable.GroupByArgs<T, TKey, TElement, TResult>): Grouping<TKey, TResult>;
     groupBy<TKey>(keySelector: (item: T) => TKey, additionalParameters: { comparer?: Comparer<TKey> }): Grouping<TKey, T>;
     groupBy<TKey, TElement = T>(keySelector: (item: T) => TKey, elementSelector: (item: T) => TElement, additionalParameters?: { comparer?: Comparer<TKey> }): Grouping<TKey, TElement>;
     groupBy<TKey, TElement = T, TResult = TElement>(keySelector: (item: T) => TKey, arg1?: any, additionalParameters?: { comparer?: Comparer<TKey> }): Grouping<TKey, TResult> {
-        let options = Object.create(null) as Collection.GroupByArgs<T, TKey, TElement, TResult>;
+        let options = Object.create(null) as Enumerable.GroupByArgs<T, TKey, TElement, TResult>;
         if (typeof arg1 === 'function')
             Object.assign(options, { elementSelector: arg1, ...additionalParameters });
         else
@@ -587,7 +587,7 @@ export class Enumerable<T> {
             else
                 comparer = arg1.comparer;
         }
-        let grouped = this.groupBy(keySelector, { comparer: comparer, elementSelector: elementSelector } as Collection.GroupByArgs<T, TKey, TValue, TValue>);
+        let grouped = this.groupBy(keySelector, { comparer: comparer, elementSelector: elementSelector } as Enumerable.GroupByArgs<T, TKey, TValue, TValue>);
         let map = new Map();
 
         for (let item of grouped) {
@@ -615,7 +615,7 @@ export class Enumerable<T> {
             else
                 comparer = arg1.comparer;
         }
-        let grouped = this.groupBy(keySelector, { comparer: comparer, elementSelector: elementSelector } as Collection.GroupByArgs<T, TKey, TValue, TValue>);
+        let grouped = this.groupBy(keySelector, { comparer: comparer, elementSelector: elementSelector } as Enumerable.GroupByArgs<T, TKey, TValue, TValue>);
         let map = new Map<TKey, Enumerable<TValue>>();
 
         for (let item of grouped) {
@@ -670,7 +670,7 @@ export class Enumerable<T> {
     }
 }
 
-export module Collection {
+export module Enumerable {
     export interface GroupByArgs<T, TKey, TElement, TResult> {
         elementSelector?: (item: T) => TElement;
         resultSelector: (key: TKey, values: Enumerable<TElement>) => TResult;
