@@ -11,8 +11,6 @@ Future updates will focus on performance enhancements and greater test coverage
 
 ### Usage
 
-&nbsp;
-
 Usage is simple, to obtain a collection, wrap any Iterable with a call to the ```linq``` function and then chain additional methods as required, e.g.:
 
 ```
@@ -36,7 +34,6 @@ for(let item of oddNumbers) {
 
 ### Dependencies
 
-&nbsp;
 
 No 3rd party libs, only the vanilla JS standard library (The test suite uses Jasmine)
 
@@ -51,7 +48,6 @@ If you're having issues with an environment that doesn't support ```bigint```, a
 
 ### Differences from .NET
 
-&nbsp;
 
 The method signatures are largely the same as their .NET counterparts, except that case has been changed to match JS conventions, differences are kept to a minimum and are due to limitations in the language/library:
 
@@ -64,7 +60,7 @@ The method signatures are largely the same as their .NET counterparts, except th
 * ```groupBy()```, ```toDictionary()```, ```toLookup()``` 
 These methods all have multiple overloads with function parameters. Without any reliable way to detect which overload is being called, these have been overloaded with the most simple/common overloads staying the same and some parameters, usually a comparer, being encapsulated into an object parameter
 
-* ```comparer``` Many methods take an optional comparer argument for custom equality checking, usually .NET types have built-in comparer options you can use or write your own. Here, these have been implemented as an optional callback function for determining equality, which defaults to the ```===``` operator if not provided.
-There may be some "default" comparer logic implemented in the future but backwards compatibility with the existing approach will be maintained
+* ```comparer``` Many methods take an optional comparer argument for custom equality checking, usually .NET types have built-in comparer options you can use or write your own. Here, these have been implemented as an optional callback function for determining equality, which defaults to the strict equality (```===```) operator if not provided.
+There may be some support for comparer types in the future but backwards compatibility with the existing approach will be maintained
 
-* ```toHashSet()```, ```toDictionary()```, ```toLookup()``` - These methods make use of the .NET types ```HashSet<T>```, ```Dictionary<TKey, TValue>``` and ```Lookup<TKey, TValue>```, these have been mapped to their closest counterparts in JS, ```Set<T>```, ```Map<TKey, TValue>``` and ```Map<TKey, Collection<TValue>>``` respectively. It is worth noting that these objects differ slightly from their .NET counterparts and although a custom ```comparer``` can be provided for the latter two, this will only be used in the construction of the ```Map``` which does not support this itself. Also it is worth noting that in order to use more ```Collection``` functions on these objects, you will need to wrap an iterable with the ```linq()``` function again, as these native objects do not have innate support for this library
+* ```toHashSet()```, ```toDictionary()```, ```toLookup()``` - These methods make use of the .NET types ```HashSet<T>```, ```Dictionary<TKey, TValue>``` and ```Lookup<TKey, TValue>```, these have been mapped to their closest counterparts in JS, ```Set<T>```, ```Map<TKey, TValue>``` and ```Map<TKey, Enumerable<TValue>>``` respectively. It is worth noting that these objects differ slightly from their .NET counterparts and although a custom ```comparer``` can be provided for the latter two, this will only be used when constructing the returned ```Map```. Also it is worth noting that in order to use more ```Collection``` functions on these objects, you will need to wrap an iterable with the ```linq()``` function again, as these native objects do not have innate support for this library
