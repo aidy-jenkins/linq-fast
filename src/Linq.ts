@@ -124,7 +124,12 @@ export class Enumerable<T> {
             return this.any(val => val === value as any as T);
     }
 
-    count() {
+    count(): number;
+    count(predicate: Predicate<T>): number;
+    count(predicate?: Predicate<T>) {
+        if(predicate !== void 0)
+            return this.where(predicate).count();
+        
         let count = 0;
         for (let item of this.data)
             ++count;

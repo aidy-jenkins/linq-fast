@@ -122,6 +122,11 @@ describe("Linq", () => {
         it("Should return the accurate count of items in the collection", () => {
             expect(testNumbers.count()).toBe(testNumbers.toArray().length);
         });
+
+        it("Should accept a predicate and return the correct result", () => {
+            expect(testNumbers.count(x => x < 5)).toBe(4);
+            expect(testNumbers.count(x => x > 7)).toBe(3);
+        })
     });
 
     describe("DefaultIfEmpty", () => {
