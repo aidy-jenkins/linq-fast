@@ -1,6 +1,6 @@
 {
   "name": "linq-fast",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "JS implementation of linq written in TypeScript",
   "main": "Linq.js",
   "directories": {
